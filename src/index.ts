@@ -1,4 +1,56 @@
-import { mock } from 'bun:test';
+// Lightweight mock factory used in tests (replacement for Bun's `mock`)
+function createBaseMock(defaultImpl?: (...args: any[]) => any) {
+  let impl: ((...args: any[]) => any) | undefined = defaultImpl;
+  const onceQueue: ((...args: any[]) => any)[] = [];
+
+  const fn: any = (...args: any[]) => {
+    fn.mock.calls.push(args);
+    const next = onceQueue.shift();
+    const toCall = next ?? impl;
+    try {
+      const res = toCall ? toCall(...args) : undefined;
+      fn.mock.results.push({ type: 'return', value: res });
+      return res;
+    } catch (err) {
+      fn.mock.results.push({ type: 'throw', value: err });
+      throw err;
+    }
+  };
+
+  fn.mock = { calls: [] as any[], results: [] as any[] } as any;
+
+  fn.mockImplementation = (f: (...args: any[]) => any) => {
+    impl = f;
+    return fn;
+  };
+
+  fn.mockImplementationOnce = (f: (...args: any[]) => any) => {
+    onceQueue.push(f);
+    return fn;
+  };
+
+  fn.mockReturnValue = (v: any) => fn.mockImplementation(() => v);
+  fn.mockReturnValueOnce = (v: any) => fn.mockImplementationOnce(() => v);
+  fn.mockResolvedValue = (v: any) => fn.mockImplementation(() => Promise.resolve(v));
+  fn.mockResolvedValueOnce = (v: any) => fn.mockImplementationOnce(() => Promise.resolve(v));
+  fn.mockRejectedValue = (e: any) => fn.mockImplementation(() => Promise.reject(e));
+  fn.mockRejectedValueOnce = (e: any) => fn.mockImplementationOnce(() => Promise.reject(e));
+
+  fn.mockClear = () => {
+    fn.mock.calls = [];
+    fn.mock.results = [];
+    return fn;
+  };
+
+  fn.mockReset = () => {
+    fn.mockClear();
+    impl = defaultImpl;
+    onceQueue.length = 0;
+    return fn;
+  };
+
+  return fn as any;
+}
 
 /**
  * Type that transforms a type into a deeply mocked version
@@ -115,8 +167,8 @@ export function createMock<T extends any = any>(depth: number = 0): DeepMocked<T
     },
   };
 
-  // Create the base mock function using bun:test mock
-  const baseMock = mock(() => createMock<any>(depth + 1));
+  // Create the base mock function
+  const baseMock = createBaseMock(() => createMock<any>(depth + 1));
 
   // Add utility methods to the mock function
   (baseMock as any).mockReturnValue = (value: any) => {
@@ -181,10 +233,11 @@ export type Mocked<T> = DeepMocked<T>;
  * const mock = createMock<UserService>();
  * isMock(mock); // true
  */
-export function isMock(value: any): value is ReturnType<typeof mock> {
+export function isMock(value: any): value is ReturnType<typeof createBaseMock> {
   return (
     typeof value === 'function' &&
-    value.mock &&
+    value != null &&
+    typeof value.mock === 'object' &&
     Array.isArray(value.mock.calls) &&
     Array.isArray(value.mock.results)
   );
