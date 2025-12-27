@@ -1,5 +1,5 @@
 {
-    "name": "create-mock-bun",
+    "name": "ts-bun",
     "version": "0.0.4",
     "type": "module",
     "scripts": {
