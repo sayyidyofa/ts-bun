@@ -1,10 +1,10 @@
-# create-mock-bun
+# ts-bun
 createMock Implementation for Bun
 A TypeScript utility that creates deep, recursive mock objects matching @golevelup/ts-jest behavior, using only Bun's built-in bun:test module.
 
 Installation & Usage
 
-`bun i -D create-mock-bun`
+`bun i -D ts-bun`
 
 ```typescript
 import { createMock, DeepMocked } from 'create-mock-bun';
