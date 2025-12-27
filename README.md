@@ -4,10 +4,10 @@ A TypeScript utility that creates deep, recursive mock objects matching @golevel
 
 Installation & Usage
 
-`bun i -D ts-bun`
+`bun i -D @sayyidyofa/ts-bun`
 
 ```typescript
-import { createMock, DeepMocked } from 'create-mock-bun';
+import { createMock, DeepMocked } from '@sayyidyofa/ts-bun';
 
 interface UserService {
   getUser(id: string): Promise<{ id: string; name: string }>;
